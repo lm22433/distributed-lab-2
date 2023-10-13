@@ -2,16 +2,12 @@ package main
 
 import (
 	"bufio"
-	//	"net/rpc"
-	"flag"
+	"fmt"
+	"math/rand"
 	"net/rpc"
 	"os"
+	"time"
 	"uk.ac.bris.cs/distributed2/secretstrings/stubs"
-
-	//	"bufio"
-	//	"os"
-	//	"uk.ac.bris.cs/distributed2/secretstrings/stubs"
-	"fmt"
 )
 
 func words() ([]string, error) {
@@ -30,11 +26,10 @@ func words() ([]string, error) {
 }
 
 func main() {
-	server := flag.String("server", "127.0.0.1:8030", "IP:port string to connect to as server")
-	flag.Parse()
-	fmt.Println("Server: ", *server)
-	client, _ := rpc.Dial("tcp", *server)
-	defer client.Close()
+	// Define a list of server addresses to distribute the load
+	servers := []string{"127.0.0.1:8030", "127.0.0.1:8031", "127.0.0.1:8032"}
+
+	rand.Seed(time.Now().UnixNano())
 
 	words, err := words()
 	if err != nil {
@@ -42,13 +37,24 @@ func main() {
 	}
 
 	for _, word := range words {
+		// Randomly select a server from the list.
+		// There are probably better ways to load balance.
+		serverAddr := servers[rand.Intn(len(servers))]
+
+		client, err := rpc.Dial("tcp", serverAddr)
+		if err != nil {
+			fmt.Printf("Failed to connect to server %s: %v\n", serverAddr, err)
+			continue
+		}
+		defer client.Close()
+
 		request := stubs.Request{Message: word}
 		response := new(stubs.Response)
 		err = client.Call(stubs.PremiumReverseHandler, request, response)
 		if err != nil {
-			fmt.Printf("Failed to reverse word '%s': %v\n", word, err)
+			fmt.Printf("Failed to reverse word '%s' on server %s: %v\n", word, serverAddr, err)
 		} else {
-			fmt.Printf("Reversed '%s' to '%s'\n", word, response.Message)
+			fmt.Printf("Reversed '%s' to '%s' on server %s\n", word, response.Message, serverAddr)
 		}
 	}
 }
