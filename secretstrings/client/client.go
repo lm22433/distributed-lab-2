@@ -21,7 +21,7 @@ func main() {
 
 	request := stubs.Request{Message: "Hello"}
 	response := new(stubs.Response)
-	client.Call(stubs.ReverseHandler, request, response)
+	client.Call(stubs.PremiumReverseHandler, request, response)
 	fmt.Println("Responded:", response.Message)
 	//TODO: connect to the RPC server and send the request(s)
 }

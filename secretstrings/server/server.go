@@ -33,6 +33,11 @@ func (s *SecretStringOperations) Reverse(req stubs.Request, res *stubs.Response)
 	return
 }
 
+func (s *SecretStringOperations) FastReverse(req stubs.Request, res *stubs.Response) (err error) {
+	res.Message = ReverseString(req.Message, 2)
+	return
+}
+
 func main() {
 	pAddr := flag.String("port", "8030", "Port to listen on")
 	flag.Parse()
